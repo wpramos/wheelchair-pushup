@@ -48,7 +48,10 @@ def resize_small():
 
 
 pushup_timer = tk.StringVar()
-label_pushup_timer = tk.Label(textvariable=pushup_timer)
+label_pushup_timer = tk.Label(
+    textvariable=pushup_timer,
+    font=('TkDefaultFont', 144),
+)
 
 expected_pushup_time = 10
 count = 0
@@ -60,7 +63,8 @@ def run_pushup_timer():
 
     global last_pushup_time, is_pushup_timer_on, count
 
-    btn_start_pushup_timer.pack_forget()
+    btn_start_pushup_timer.place_forget()
+    label_pushup_timer.place(relx=0.5, rely=0.5, anchor='center')
 
     if not is_pushup_timer_on:
         count += 1
@@ -85,7 +89,7 @@ start_time = time.time()
 
 total_time = tk.StringVar()
 label_total_time = tk.Label(textvariable=total_time)
-label_total_time.pack()
+label_total_time.place(relx=0.5, rely=0.5, anchor='center')
 
 
 def to_hhmmss(seconds):
@@ -128,21 +132,20 @@ is_fullscreen = False
 def construct_pushup_window():
     logging.debug('construct_pushup_window()')
 
-    label_total_time.pack_forget()
+    label_total_time.place_forget()
 
     resize_fullscreen()
     pushup_timer.set(expected_pushup_time)
-    label_pushup_timer.pack()
-    btn_start_pushup_timer.pack()
+    btn_start_pushup_timer.place(relx=0.5, rely=0.5, anchor='center')
 
 
 def deconstruct_pushup_window():
     logging.debug('deconstruct_pushup_window()')
 
-    label_pushup_timer.pack_forget()
+    label_pushup_timer.place_forget()
 
     resize_small()
-    label_total_time.pack()
+    label_total_time.place(relx=0.5, rely=0.5, anchor='center')
 
 
 permissible_continuous_sitting_time = 150
