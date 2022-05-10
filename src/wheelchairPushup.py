@@ -5,6 +5,8 @@ import logging
 
 import math
 
+import sys
+
 import time
 
 import tkinter as tk
@@ -17,34 +19,51 @@ logging.basicConfig(
 )
 logging.disable()
 
+sys_platform = sys.platform
+logging.debug('sys_platform: {}'.format(sys_platform))
+
 root = tk.Tk()
 root.title('Wheelchair Pushup')
-root.geometry('300x150-0-100')
+root.geometry('300x75-0-100')
 root.resizable(False, False)
 root.iconbitmap('img/wheelchairPushup.ico')
 
 
-def resize_fullscreen():
-    logging.debug('resize_fullscreen()')
+def resize_window_max():
+    logging.debug('resize_window_max()')
 
-    global is_fullscreen
+    global is_window_maximized
 
-    if not is_fullscreen:
-        is_fullscreen = True
-        root.attributes('-topmost', True)
-        root.attributes('-fullscreen', True)
+    if not is_window_maximized:
+        is_window_maximized = True
+
+        # On Linux platforms, the state('zoomed') apparently returns an
+        # exception when called, while on the Windows platform setting
+        # the 'zoomed' attribute using the 'attribute' method raises an
+        # exception. Mac too raises an exception similar to Windows.
+        if sys_platform == 'linux':
+            root.attributes('-zoomed', True)
+        else:
+            root.state('zoomed')
 
 
-def resize_small():
-    logging.debug('resize_small()')
+def resize_window_small():
+    logging.debug('resize_window_small()')
 
-    global is_fullscreen
+    global is_window_maximized
 
-    if is_fullscreen:
-        is_fullscreen = False
-        root.attributes('-fullscreen', False)
+    if is_window_maximized:
+        is_window_maximized = False
+
+        # On Linux platforms, the state() method apparently returns an
+        # exception when called, while on the Windows platform setting
+        # the 'zoomed' attribute using the 'attribute' method raises an
+        # exception. Mac too raises an exception similar to Windows.
+        if sys_platform == 'linux':
+            root.attributes('-zoomed', False)
+        else:
+            root.state('normal')
         root.geometry('300x75-0-100')
-        root.attributes('-topmost', False)
 
 
 pushup_timer = tk.StringVar()
@@ -58,7 +77,12 @@ count = 0
 is_pushup_timer_on = False
 
 
-def run_pushup_timer():
+def run_pushup_timer(event=None):
+    # This function serves both as an event handler, but is also called
+    # independently. In the former case the event parameter is required.
+    # However, if the function is called independently, the specified
+    # parameter will be required. Hence, as a workaround the paremeter
+    # 'event' is assigned a default value 'None'.
     logging.debug('run_pushup_timer()')
 
     global last_pushup_time, is_pushup_timer_on, count
@@ -84,6 +108,7 @@ def run_pushup_timer():
 
 
 btn_start_pushup_timer = ttk.Button(text='Start', command=run_pushup_timer)
+btn_start_pushup_timer.bind('<Return>', run_pushup_timer)
 
 start_time = time.time()
 
@@ -126,7 +151,7 @@ def update_total_time(seconds):
 update_total_time(0)
 
 last_pushup_time = 0
-is_fullscreen = False
+is_window_maximized = False
 
 
 def construct_pushup_window():
@@ -134,9 +159,20 @@ def construct_pushup_window():
 
     label_total_time.place_forget()
 
-    resize_fullscreen()
+    resize_window_max()
+    # deiconify() acts differrently based on the state of the window, at
+    # least on my system. If the window is iconified, i.e. if the window
+    # is minimized to to taskbar, deiconify() launches the window, with
+    # focus. If the window is not iconified, but is simply hidden behind
+    # other windows, deiconify() is restricted by Windows from launching
+    # the window, but instead the method initiates a taskbar alert. As
+    # the former action is desired, the root window is first iconified
+    # before deiconification.
+    root.iconify()
+    root.deiconify()
     pushup_timer.set(expected_pushup_time)
     btn_start_pushup_timer.place(relx=0.5, rely=0.5, anchor='center')
+    btn_start_pushup_timer.focus_set()
 
 
 def deconstruct_pushup_window():
@@ -144,7 +180,7 @@ def deconstruct_pushup_window():
 
     label_pushup_timer.place_forget()
 
-    resize_small()
+    resize_window_small()
     label_total_time.place(relx=0.5, rely=0.5, anchor='center')
 
 
@@ -162,7 +198,7 @@ def main_timed_function():
     if (
         continuous_sitting_time >= permissible_continuous_sitting_time
         and not
-        is_fullscreen
+        is_window_maximized
     ):
         construct_pushup_window()
 
